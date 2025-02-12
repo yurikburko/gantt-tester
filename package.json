@@ -18,6 +18,7 @@
         "@progress/kendo-react-dateinputs": "^9.4.0",
         "@progress/kendo-react-dropdowns": "^9.4.0",
         "@progress/kendo-react-gantt": "^9.4.0",
+        "@progress/kendo-react-grid": "^9.4.0",
         "@progress/kendo-react-inputs": "^9.4.0",
         "@progress/kendo-react-intl": "^9.4.0",
         "@progress/kendo-react-treelist": "^9.4.0",
@@ -39,4 +40,3 @@
         "typescript": "^5"
     }
 }
-
