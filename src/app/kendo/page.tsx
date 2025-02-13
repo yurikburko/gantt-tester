@@ -103,7 +103,7 @@ export default function Page() {
     }, [taskData, expandedState]);
 
     return (
-        <>
+        <div id="root" className="flex flex-col">
             <h1>Kendo Gantt implementation</h1>
 
             <Gantt
@@ -119,7 +119,7 @@ export default function Page() {
                 <GanttWeekView />
                 <GanttMonthView />
             </Gantt>
-        </>
+        </div>
     );
 }
 
