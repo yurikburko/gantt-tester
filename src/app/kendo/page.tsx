@@ -7,35 +7,57 @@ import {
     GanttMonthView,
     GanttDayView,
     GanttTextFilter,
-    GanttTaskModelFields,
-    GanttDependencyModelFields,
     GanttExpandChangeEvent,
     orderBy,
     mapTree,
     extendDataItem,
+    GanttDateFilter,
+    filterBy,
+    GanttDataStateChangeEvent,
+    GanttTaskClickEvent,
+    GanttTaskDoubleClickEvent,
+    GanttRowDoubleClickEvent,
+    GanttAddClickEvent,
+    addTask,
+    TaskModelFields,
+    GanttTaskRemoveClickEvent,
+    GanttRemoveDialogStateChangeEvent,
+    removeTask,
+    GanttDependencyCreateEvent,
+    addDependency,
+    GanttFormStateChangeEvent,
+    updateTask,
+    GanttDependency,
+    GanttColumnProps,
+    GanttForm,
+    GanttRemoveDialog,
 } from '@progress/kendo-react-gantt';
-import { simpleDependencies, simpleTasks } from '../mockData/mockData';
+import { generateTasks, simpleDependencies, simpleTasks } from '../mockData/mockData';
 import { useLicenseRemover } from './hooks/useLicenseRemover';
-import { getter } from '@progress/kendo-react-common';
-import { SortDescriptor } from '@progress/kendo-data-query';
+import { clone, getter, guid } from '@progress/kendo-react-common';
+import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
+import { WindowProps, WindowPropsContext } from '@progress/kendo-react-dialogs';
 
 const ganttStyle = {
     height: '100%',
     width: '100%',
 };
 
-const taskModelFields: GanttTaskModelFields = {
+const taskModelFields: TaskModelFields = {
     id: 'id',
     start: 'start',
     end: 'end',
     title: 'title',
     percentComplete: 'percentComplete',
+    parentId: 'parentId',
     isRollup: 'isRollup',
     isExpanded: 'isExpanded',
     isInEdit: 'isInEdit',
     children: 'subtasks',
+    isSelected: 'isSelected',
 };
-const dependencyModelFields: GanttDependencyModelFields = {
+// type of GanttDependencyModelFields, should be type of DependencyModelFields? (is not exported)
+const dependencyModelFields = {
     id: 'id',
     fromId: 'fromId',
     toId: 'toId',
@@ -60,25 +82,54 @@ const columns = [
         title: 'Start',
         width: 120,
         format: '{0:MM/dd/yyyy}',
+        filter: GanttDateFilter,
     },
     {
         field: taskModelFields.end,
         title: 'End',
         width: 120,
         format: '{0:MM/dd/yyyy}',
+        filter: GanttDateFilter,
     },
 ];
 
-const getTaskId = getter(taskModelFields.id!);
+const getTaskId = getter(taskModelFields.id);
 
-const defaultSort: SortDescriptor[] = [{ field: taskModelFields.id!, dir: 'asc' }];
+const defaultSort: SortDescriptor[] = [{ field: taskModelFields.id, dir: 'asc' }];
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const initTestTasks = generateTasks(1000);
 
 export default function Page() {
     useLicenseRemover();
 
-    const [taskData] = React.useState(simpleTasks);
-    const [dependencyData] = React.useState(simpleDependencies);
-    const [expandedState, setExpandedState] = React.useState([7, 11, 12, 13]);
+    const [taskData, setTaskData] = React.useState(simpleTasks); //initTestTasks
+    const [dependencyData, setDependencyData] = React.useState(simpleDependencies);
+    const [expandedState, setExpandedState] = React.useState(() => taskData.map((t) => t.id));
+    const [columnsState] = React.useState<Array<GanttColumnProps>>(columns);
+    const [selectedIdState, setSelectedIdState] = React.useState(null);
+    const [editItem, setEditItem] = React.useState(null);
+    const [removeItem, setRemoveItem] = React.useState(null);
+
+    const [dataState, setDataState] = React.useState<{
+        /**
+         * The descriptors that are used for sorting.
+         */
+        sort?: Array<SortDescriptor>;
+        /**
+         * The descriptors that are used for filtering.
+         */
+        filter?: Array<FilterDescriptor>;
+    }>({
+        sort: [],
+        filter: [],
+    });
+
+    const onDataStateChange = React.useCallback(
+        (event: GanttDataStateChangeEvent) =>
+            setDataState({ sort: event.dataState.sort, filter: event.dataState.filter }),
+        [setDataState]
+    );
 
     const onExpandChange = React.useCallback(
         (event: GanttExpandChangeEvent) => {
@@ -92,15 +143,161 @@ export default function Page() {
         [expandedState, setExpandedState]
     );
 
-    const processedData = React.useMemo(() => {
-        const sortedData = orderBy(taskData, defaultSort, taskModelFields.children!);
+    const onSelect = React.useCallback(
+        (event: GanttTaskClickEvent) => {
+            setSelectedIdState(getTaskId(event.dataItem));
+        },
+        [setSelectedIdState]
+    );
 
-        return mapTree(sortedData, taskModelFields.children!, (task) =>
-            extendDataItem(task, taskModelFields.children!, {
-                [taskModelFields.isExpanded!]: expandedState.includes(getTaskId(task)),
+    const onEdit = React.useCallback(
+        (event: GanttTaskDoubleClickEvent | GanttRowDoubleClickEvent) => setEditItem(clone(event.dataItem)),
+        [setEditItem]
+    );
+
+    const onAdd = React.useCallback(
+        (event: GanttAddClickEvent) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { syntheticEvent, nativeEvent, target, ...others } = event;
+            const newData = addTask({
+                ...others,
+                taskModelFields: taskModelFields,
+                dataTree: taskData,
+                defaultDataItem: {
+                    [taskModelFields.title]: 'New task',
+                    [taskModelFields.id]: guid(),
+                    [taskModelFields.percentComplete]: 0,
+                },
+            });
+
+            setTaskData(newData);
+        },
+        [taskData]
+    );
+
+    const onRemove = React.useCallback(
+        (event: GanttTaskRemoveClickEvent) => setRemoveItem(event.dataItem),
+        [setRemoveItem]
+    );
+
+    const removeDeletedItemDependencies = React.useCallback(
+        (item) => {
+            const newDependencyData = dependencyData.filter((d) => {
+                return d.fromId !== item[taskModelFields.id] && d.toId !== item[taskModelFields.id];
+            });
+            setDependencyData(newDependencyData);
+        },
+        [dependencyData]
+    );
+
+    const onRemoveConfirm = React.useCallback(
+        (event: GanttRemoveDialogStateChangeEvent) => {
+            const newData = removeTask({
+                removedDataItem: event.dataItem,
+                taskModelFields: taskModelFields,
+                dataTree: taskData,
+            });
+
+            setRemoveItem(null);
+            setEditItem(null);
+            setTaskData(newData);
+            removeDeletedItemDependencies(event.dataItem);
+        },
+        [taskData, setTaskData, setRemoveItem, removeDeletedItemDependencies]
+    );
+    const onRemoveCancel = React.useCallback(() => setRemoveItem(null), [setRemoveItem]);
+
+    const onDependecyCreate = React.useCallback(
+        (event: GanttDependencyCreateEvent) => {
+            const newData = addDependency({
+                dependencyData,
+                fromId: event.fromId,
+                toId: event.toId,
+                type: event.type,
+                dependencyModelFields,
+                defaultDataItem: { [dependencyModelFields.id]: guid() },
+            });
+            setDependencyData(newData);
+        },
+        [setDependencyData, dependencyData]
+    );
+
+    const onFormSubmit = React.useCallback(
+        (event: GanttFormStateChangeEvent) => {
+            const newData = updateTask({
+                updatedDataItem: event.dataItem,
+                taskModelFields: taskModelFields,
+                dataTree: taskData,
+            });
+
+            if (
+                event.dataItem.parentId !== event.initialDataItem.parentId &&
+                !expandedState.includes(event.dataItem.parentId)
+            ) {
+                setExpandedState([...expandedState, event.dataItem.parentId]);
+            }
+            setEditItem(null);
+            setTaskData(newData);
+
+            if (event.dependencies && event.dependencies.createdDependencies.length) {
+                const newItems = event.dependencies.createdDependencies;
+
+                const newItemsWithId = newItems.map((item: GanttDependency) => {
+                    if (item.id === null) {
+                        item.id = Math.floor(Math.random() * 1000) + 100;
+                    }
+                    return item;
+                });
+
+                setDependencyData((prevState: GanttDependency[]) => [...prevState, ...newItemsWithId]);
+            }
+
+            if (event.dependencies && event.dependencies.updatedDependencies.length) {
+                const updatedItems = event.dependencies.updatedDependencies;
+
+                const updatedArray = [...dependencyData];
+
+                updatedItems.forEach((dependency: GanttDependency) => {
+                    const positionIndex = dependencyData.findIndex((dep: GanttDependency) => dep.id === dependency.id);
+
+                    if (positionIndex > -1) {
+                        updatedArray.splice(positionIndex, 1, dependency);
+                    }
+                });
+
+                setDependencyData(updatedArray);
+            }
+
+            if (event.dependencies && event.dependencies.deletedDependencies.length) {
+                const deletedItems = event.dependencies.deletedDependencies;
+
+                const filteredDeletedItems = dependencyData.filter(
+                    (item: GanttDependency) =>
+                        !deletedItems.find((deletedItem: GanttDependency) => item.id === deletedItem.id)
+                );
+
+                setDependencyData(filteredDeletedItems);
+            }
+        },
+        [taskData, expandedState, dependencyData]
+    );
+    const onFormCancel = React.useCallback(() => setEditItem(null), [setEditItem]);
+    const onFormDelete = React.useCallback((event: GanttRemoveDialogStateChangeEvent) => {
+        setRemoveItem(event.dataItem);
+    }, []);
+
+    const processedData = React.useMemo(() => {
+        const filteredData = filterBy(taskData, dataState.filter || [], taskModelFields.children);
+
+        const sortedFilteredData = orderBy(filteredData, defaultSort, taskModelFields.children);
+
+        return mapTree(sortedFilteredData, taskModelFields.children, (task) =>
+            extendDataItem(task, taskModelFields.children, {
+                [taskModelFields.isExpanded]: expandedState.includes(getTaskId(task)),
+                [taskModelFields.isSelected]: selectedIdState === getTaskId(task),
             })
         );
-    }, [taskData, expandedState]);
+    }, [taskData, expandedState, dataState, selectedIdState]);
 
     return (
         <div id="root" className="flex flex-col">
@@ -112,17 +309,63 @@ export default function Page() {
                 taskModelFields={taskModelFields}
                 dependencyData={dependencyData}
                 dependencyModelFields={dependencyModelFields}
-                columns={columns}
+                columns={columnsState}
+                // Works with bugs
+                resizable={true}
+                reorderable={true}
+                filter={dataState.filter}
+                navigatable={true}
                 onExpandChange={onExpandChange}
+                onDataStateChange={onDataStateChange}
+                toolbar={{ addTaskButton: true }}
+                onAddClick={onAdd}
+                onTaskClick={onSelect}
+                onRowClick={onSelect}
+                onTaskDoubleClick={onEdit}
+                onRowDoubleClick={onEdit}
+                onTaskRemoveClick={onRemove}
+                onDependencyCreate={onDependecyCreate}
+                defaultView="week"
             >
                 <GanttDayView />
                 <GanttWeekView />
                 <GanttMonthView />
             </Gantt>
+
+            {editItem && (
+                <WindowPropsContext.Provider
+                    value={(props: WindowProps) => {
+                        return { ...props };
+                    }}
+                >
+                    <GanttForm
+                        dataItem={editItem}
+                        taskData={processedData}
+                        dependencyData={dependencyData}
+                        onSubmit={onFormSubmit}
+                        onCancel={onFormCancel}
+                        onDelete={onFormDelete}
+                        onClose={onFormCancel}
+                    />
+                </WindowPropsContext.Provider>
+            )}
+            {removeItem && (
+                <GanttRemoveDialog
+                    dataItem={removeItem}
+                    onConfirm={onRemoveConfirm}
+                    onCancel={onRemoveCancel}
+                    onClose={onRemoveCancel}
+                />
+            )}
         </div>
     );
 }
 
 /*
-- Есть поддержка сортировки по колонкам грида 
+Плюсы:
+- Есть поддержка сортировки по колонкам грида
+- Есть поддержка фильтров на уровне колонок в гриде
+- Ресайз и реордер колонок (ресайз работает с багами)
+Минусы:
+- 
 */
