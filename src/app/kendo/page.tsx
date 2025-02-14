@@ -181,7 +181,7 @@ export default function Page() {
     );
 
     const removeDeletedItemDependencies = React.useCallback(
-        (item) => {
+        (item: { [x: string]: string | number }) => {
             const newDependencyData = dependencyData.filter((d) => {
                 return d.fromId !== item[taskModelFields.id] && d.toId !== item[taskModelFields.id];
             });
