@@ -6,14 +6,11 @@ import {
     GanttWeekView,
     GanttMonthView,
     GanttDayView,
-    GanttTextFilter,
     GanttExpandChangeEvent,
     orderBy,
     mapTree,
     extendDataItem,
-    GanttDateFilter,
     filterBy,
-    GanttDataStateChangeEvent,
     GanttTaskClickEvent,
     GanttTaskDoubleClickEvent,
     GanttRowDoubleClickEvent,
@@ -31,12 +28,18 @@ import {
     GanttColumnProps,
     GanttForm,
     GanttRemoveDialog,
+    GanttColumnResizeEvent,
+    GanttColumnReorderEvent,
+    GanttYearView,
+    GanttColumnMenuFilterChangeEvent,
+    GanttSortChangeEvent,
 } from '@progress/kendo-react-gantt';
 import { generateTasks, simpleDependencies, simpleTasks } from '../mockData/mockData';
 import { useLicenseRemover } from './hooks/useLicenseRemover';
 import { clone, getter, guid } from '@progress/kendo-react-common';
-import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
+import { CompositeFilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
 import { WindowProps, WindowPropsContext } from '@progress/kendo-react-dialogs';
+import { ColumnMenuDateColumn, ColumnMenuTextColumn } from '@progress/kendo-react-data-tools';
 
 const ganttStyle = {
     height: '100%',
@@ -75,21 +78,24 @@ const columns = [
         title: 'Title',
         width: 200,
         expandable: true,
-        filter: GanttTextFilter,
+        // filter: GanttTextFilter,
+        columnMenu: ColumnMenuTextColumn,
     },
     {
         field: taskModelFields.start,
         title: 'Start',
         width: 120,
         format: '{0:MM/dd/yyyy}',
-        filter: GanttDateFilter,
+        // filter: GanttDateFilter,
+        columnMenu: ColumnMenuDateColumn,
     },
     {
         field: taskModelFields.end,
         title: 'End',
         width: 120,
         format: '{0:MM/dd/yyyy}',
-        filter: GanttDateFilter,
+        // filter: GanttDateFilter,
+        columnMenu: ColumnMenuDateColumn,
     },
 ];
 
@@ -106,7 +112,16 @@ export default function Page() {
     const [taskData, setTaskData] = React.useState(simpleTasks); //initTestTasks
     const [dependencyData, setDependencyData] = React.useState(simpleDependencies);
     const [expandedState, setExpandedState] = React.useState(() => taskData.map((t) => t.id));
-    const [columnsState] = React.useState<Array<GanttColumnProps>>(columns);
+    const [columnsState, setColumnsState] = React.useState<Array<GanttColumnProps>>(columns);
+    const onColumnResize = React.useCallback(
+        (event: GanttColumnResizeEvent) => event.end && setColumnsState(event.columns),
+        [setColumnsState]
+    );
+    const onColumnReorder = React.useCallback(
+        (event: GanttColumnReorderEvent) => setColumnsState(event.columns),
+        [setColumnsState]
+    );
+
     const [selectedIdState, setSelectedIdState] = React.useState(null);
     const [editItem, setEditItem] = React.useState(null);
     const [removeItem, setRemoveItem] = React.useState(null);
@@ -119,17 +134,26 @@ export default function Page() {
         /**
          * The descriptors that are used for filtering.
          */
-        filter?: Array<FilterDescriptor>;
+        filter?: Array<CompositeFilterDescriptor>;
     }>({
         sort: [],
         filter: [],
     });
 
-    const onDataStateChange = React.useCallback(
-        (event: GanttDataStateChangeEvent) =>
-            setDataState({ sort: event.dataState.sort, filter: event.dataState.filter }),
-        [setDataState]
+    const onColumnMenuFilterChange = React.useCallback(
+        (event: GanttColumnMenuFilterChangeEvent) => setDataState({ ...dataState, filter: event.filter }),
+        [dataState]
     );
+    const onSortChange = React.useCallback(
+        (event: GanttSortChangeEvent) => setDataState({ ...dataState, sort: event.sort }),
+        [dataState]
+    );
+
+    // const onDataStateChange = React.useCallback(
+    //     (event: GanttDataStateChangeEvent) =>
+    //         setDataState({ sort: event.dataState.sort, filter: event.dataState.filter }),
+    //     [setDataState]
+    // );
 
     const onExpandChange = React.useCallback(
         (event: GanttExpandChangeEvent) => {
@@ -313,10 +337,16 @@ export default function Page() {
                 // Works with bugs
                 resizable={true}
                 reorderable={true}
-                filter={dataState.filter}
+                // filter={dataState.filter}
+                columnMenuFilter={dataState.filter}
+                onColumnMenuFilterChange={onColumnMenuFilterChange}
+                sort={dataState.sort}
+                onSortChange={onSortChange}
                 navigatable={true}
+                onColumnResize={onColumnResize}
+                onColumnReorder={onColumnReorder}
                 onExpandChange={onExpandChange}
-                onDataStateChange={onDataStateChange}
+                // onDataStateChange={onDataStateChange}
                 toolbar={{ addTaskButton: true }}
                 onAddClick={onAdd}
                 onTaskClick={onSelect}
@@ -330,6 +360,7 @@ export default function Page() {
                 <GanttDayView />
                 <GanttWeekView />
                 <GanttMonthView />
+                <GanttYearView />
             </Gantt>
 
             {editItem && (
