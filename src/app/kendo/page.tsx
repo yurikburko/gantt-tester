@@ -40,6 +40,8 @@ import { clone, getter, guid } from '@progress/kendo-react-common';
 import { CompositeFilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
 import { WindowProps, WindowPropsContext } from '@progress/kendo-react-dialogs';
 import { ColumnMenuDateColumn, ColumnMenuTextColumn } from '@progress/kendo-react-data-tools';
+import { NumericTextBox } from '@progress/kendo-react-inputs';
+import { Button } from '@progress/kendo-react-buttons';
 
 const ganttStyle = {
     height: '100%',
@@ -103,13 +105,10 @@ const getTaskId = getter(taskModelFields.id);
 
 const defaultSort: SortDescriptor[] = [{ field: taskModelFields.id, dir: 'asc' }];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const initTestTasks = generateTasks(1000);
-
 export default function Page() {
     useLicenseRemover();
 
-    const [taskData, setTaskData] = React.useState(simpleTasks); //initTestTasks
+    const [taskData, setTaskData] = React.useState(simpleTasks);
     const [dependencyData, setDependencyData] = React.useState(simpleDependencies);
     const [expandedState, setExpandedState] = React.useState(() => taskData.map((t) => t.id));
     const [columnsState, setColumnsState] = React.useState<Array<GanttColumnProps>>(columns);
@@ -323,9 +322,29 @@ export default function Page() {
         );
     }, [taskData, expandedState, dataState, selectedIdState]);
 
+    const [testTasksCount, setTestTasksCount] = React.useState(100);
+    const onGenerateTasksClick = () => {
+        const testTasks = generateTasks(testTasksCount);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setTaskData(testTasks as any[]);
+        setDependencyData([]);
+    };
+
     return (
         <div id="root" className="flex flex-col">
             <h1>Kendo Gantt implementation</h1>
+
+            <div className="flex" style={{ alignItems: 'center', gap: '8px' }}>
+                <span>Tasks count</span>
+                <NumericTextBox
+                    placeholder="Please enter tasks count"
+                    defaultValue={100}
+                    width={100}
+                    value={testTasksCount}
+                    onChange={(e) => setTestTasksCount(e.target.value ?? 0)}
+                />
+                <Button onClick={onGenerateTasksClick}>Generate tasks</Button>
+            </div>
 
             <Gantt
                 style={ganttStyle}
