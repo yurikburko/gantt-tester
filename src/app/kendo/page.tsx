@@ -33,6 +33,10 @@ import {
     GanttYearView,
     GanttColumnMenuFilterChangeEvent,
     GanttSortChangeEvent,
+    GanttSelectionChangeEvent,
+    getSelectedState,
+    GanttKeyDownEvent, 
+    getSelectedStateFromKeyDown
 } from '@progress/kendo-react-gantt';
 import { generateTasks, simpleDependencies, simpleTasks } from '../mockData/mockData';
 import { useLicenseRemover } from './hooks/useLicenseRemover';
@@ -122,7 +126,9 @@ export default function Page() {
         [setColumnsState]
     );
 
-    const [selectedIdState, setSelectedIdState] = React.useState(null);
+    // Why the type of value includes number[] ?
+    const [selectedState, setSelectedState] = React.useState<{ [key: string]:  boolean | number[] }>({});
+
     const [editItem, setEditItem] = React.useState(null);
     const [removeItem, setRemoveItem] = React.useState(null);
 
@@ -169,11 +175,37 @@ export default function Page() {
 
     const onSelect = React.useCallback(
         (event: GanttTaskClickEvent) => {
-            setSelectedIdState(getTaskId(event.dataItem));
+            const taskId = getTaskId(event.dataItem);
+            setSelectedState({ [taskId]: !selectedState[taskId] });
         },
-        [setSelectedIdState]
+        [selectedState]
     );
 
+    const onSelectionChange = React.useCallback(
+        (event: GanttSelectionChangeEvent) => {
+            const newSelectedState = getSelectedState({
+                event,
+                selectedState,
+                dataItemKey: taskModelFields.id
+            });
+
+            setSelectedState(newSelectedState);
+        },
+        [selectedState]
+    );
+    const onKeyDown = React.useCallback(
+        (event: GanttKeyDownEvent) => {
+            const newSelectedState = getSelectedStateFromKeyDown({
+                event,
+                selectedState: selectedState,
+                dataItemKey: taskModelFields.id
+            });
+
+            setSelectedState(newSelectedState);
+        },
+        [selectedState]
+    );
+    
     const onEdit = React.useCallback(
         (event: GanttTaskDoubleClickEvent | GanttRowDoubleClickEvent) => setEditItem(clone(event.dataItem)),
         [setEditItem]
@@ -318,10 +350,10 @@ export default function Page() {
         return mapTree(sortedFilteredData, taskModelFields.children, (task) =>
             extendDataItem(task, taskModelFields.children, {
                 [taskModelFields.isExpanded]: expandedState.includes(getTaskId(task)),
-                [taskModelFields.isSelected]: selectedIdState === getTaskId(task),
+                [taskModelFields.isSelected]: selectedState[getTaskId(task)],
             })
         );
-    }, [taskData, expandedState, dataState, selectedIdState]);
+    }, [taskData, expandedState, dataState, selectedState]);
 
     const [testTasksCount, setTestTasksCount] = React.useState(100);
     const onGenerateTasksClick = () => {
@@ -370,12 +402,20 @@ export default function Page() {
                 toolbar={{ addTaskButton: true }}
                 onAddClick={onAdd}
                 onTaskClick={onSelect}
-                onRowClick={onSelect}
+                // onRowClick={onSelect}
                 onTaskDoubleClick={onEdit}
                 onRowDoubleClick={onEdit}
                 onTaskRemoveClick={onRemove}
                 onDependencyCreate={onDependecyCreate}
                 defaultView="week"
+                selectable={{
+                    enabled: true,
+                    drag: false,
+                    cell: false,
+                    mode: "multiple"
+                }}
+                onSelectionChange={onSelectionChange}
+                onKeyDown={onKeyDown}
             >
                 <GanttDayView />
                 <GanttWeekView />
