@@ -417,8 +417,8 @@ export default function Page() {
                 onSelectionChange={onSelectionChange}
                 onKeyDown={onKeyDown}
             >
-                <GanttDayView />
-                <GanttWeekView />
+                <GanttDayView slotDuration={180}/>
+                <GanttWeekView slotWidth={90}/>
                 <GanttMonthView />
                 <GanttYearView />
             </Gantt>
