@@ -26,9 +26,11 @@
         "@progress/kendo-react-treelist": "^9.4.1",
         "@progress/kendo-svg-icons": "^4.0.0",
         "@progress/kendo-theme-default": "^10.2.0",
+        "konva": "^9.3.18",
         "next": "15.1.7",
         "react": "^19.0.0",
-        "react-dom": "^19.0.0"
+        "react-dom": "^19.0.0",
+        "react-konva": "^19.0.3"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3",

@@ -1,10 +1,14 @@
 'use client';
 
 import * as React from 'react'
-
 import { Splitter, SplitterOnChangeEvent } from '@progress/kendo-react-layout';
 import { extendDataItem, filterBy, mapTree, orderBy, TreeList, TreeListColumnProps, TreeListDataStateChangeEvent, TreeListExpandChangeEvent, TreeListTextFilter } from '@progress/kendo-react-treelist';
 import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
+import dynamic from 'next/dynamic';
+
+const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
+    ssr: false,
+});
 
 interface Task {
     id: number,
@@ -46,7 +50,7 @@ export default function Page() {
 
 
     const tasks: Task[] = [
-        { 
+        {
             id: 1, name: "task1",
             startDate: new Date(2025, 0, 1),
             endDate: new Date(2025, 0, 5),
@@ -63,7 +67,7 @@ export default function Page() {
         },
         expanded: [1, 2, 32]
     });
-    
+
     const onExpandChange = (e: TreeListExpandChangeEvent) => {
         setState({
             ...state,
@@ -76,7 +80,7 @@ export default function Page() {
             dataState: event.dataState
         });
     };
-    
+
     const addExpandField = (dataTree: Task[]) => {
         const expanded: number[] = state.expanded;
         return mapTree(dataTree, subItemsField, (item) =>
@@ -111,9 +115,7 @@ export default function Page() {
                     onDataStateChange={handleDataStateChange}
                     columns={columns}
                 />
-                <div>
-                    <p>Canvas content?</p>
-                </div>
+                <GanttCanvas></GanttCanvas>
             </Splitter>
         </>
     );
