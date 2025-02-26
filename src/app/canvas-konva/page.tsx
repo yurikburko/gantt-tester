@@ -1,8 +1,18 @@
 'use client';
 
-import * as React from 'react'
-import { Splitter, SplitterOnChangeEvent } from '@progress/kendo-react-layout';
-import { extendDataItem, filterBy, mapTree, orderBy, TreeList, TreeListColumnProps, TreeListDataStateChangeEvent, TreeListExpandChangeEvent, TreeListTextFilter } from '@progress/kendo-react-treelist';
+import * as React from 'react';
+import { Splitter, SplitterOnChangeEvent, SplitterPaneProps } from '@progress/kendo-react-layout';
+import {
+    extendDataItem,
+    filterBy,
+    mapTree,
+    orderBy,
+    TreeList,
+    TreeListColumnProps,
+    TreeListDataStateChangeEvent,
+    TreeListExpandChangeEvent,
+    TreeListTextFilter,
+} from '@progress/kendo-react-treelist';
 import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
 import dynamic from 'next/dynamic';
 
@@ -11,23 +21,22 @@ const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
 });
 
 interface Task {
-    id: number,
-    name: string,
-    startDate?: Date,
-    endDate?: Date,
-    children?: Task[],
+    id: number;
+    name: string;
+    startDate?: Date;
+    endDate?: Date;
+    children?: Task[];
 }
 
 export interface DataState {
-    sort?: SortDescriptor[],
-    filter?: FilterDescriptor[]
+    sort?: SortDescriptor[];
+    filter?: FilterDescriptor[];
 }
 interface AppState {
     data: Task[];
     dataState: DataState;
     expanded: number[];
 }
-
 
 const subItemsField: string = 'children';
 const expandField: string = 'expanded';
@@ -36,48 +45,53 @@ const columns: TreeListColumnProps[] = [
     { field: 'startDate', title: 'Start Date', width: '200px', format: '{0:d}' },
     { field: 'endDate', title: 'End Date', width: '200px', format: '{0:d}' },
 ];
+const defaultSort: SortDescriptor = { field: 'name', dir: 'asc' };
 
 export default function Page() {
     // const posts = await getPosts()
 
-    const [panes, setPanes] = React.useState<Array<any>>([
+    const [panes, setPanes] = React.useState<Array<SplitterPaneProps>>([
         { size: '20%', min: '20px', collapsible: true },
         {},
     ]);
     const onChange = (event: SplitterOnChangeEvent) => {
         setPanes(event.newState);
-    }
-
+    };
 
     const tasks: Task[] = [
         {
-            id: 1, name: "task1",
+            id: 1,
+            name: 'task1',
             startDate: new Date(2025, 0, 1),
             endDate: new Date(2025, 0, 5),
-            children: [{ id: 11, name: "task1_subtask", startDate: new Date(2025, 0, 10), endDate: new Date(2025, 0, 13) }]
+            children: [
+                { id: 11, name: 'task1_subtask', startDate: new Date(2025, 0, 10), endDate: new Date(2025, 0, 13) },
+            ],
         },
-        { id: 2, name: "task2", startDate: new Date(2025, 0, 10), endDate: new Date(2025, 0, 15) },
-    ]
+        { id: 2, name: 'task2', startDate: new Date(2025, 0, 10), endDate: new Date(2025, 0, 15) },
+    ];
 
     const [state, setState] = React.useState<AppState>({
         data: [...tasks],
         dataState: {
-            sort: [{ field: 'name', dir: 'asc' }],
-            filter: []
+            sort: [defaultSort],
+            filter: [],
         },
-        expanded: [1, 2, 32]
+        expanded: [1, 2, 32],
     });
 
     const onExpandChange = (e: TreeListExpandChangeEvent) => {
         setState({
             ...state,
-            expanded: e.value ? state.expanded.filter((id) => id !== e.dataItem.id) : [...state.expanded, e.dataItem.id]
+            expanded: e.value
+                ? state.expanded.filter((id) => id !== e.dataItem.id)
+                : [...state.expanded, e.dataItem.id],
         });
     };
     const handleDataStateChange = (event: TreeListDataStateChangeEvent) => {
         setState({
             ...state,
-            dataState: event.dataState
+            dataState: event.dataState,
         });
     };
 
@@ -85,25 +99,21 @@ export default function Page() {
         const expanded: number[] = state.expanded;
         return mapTree(dataTree, subItemsField, (item) =>
             extendDataItem(item, subItemsField, {
-                [expandField]: expanded.includes(item.id)
+                [expandField]: expanded.includes(item.id),
             })
         );
     };
 
     const processData = () => {
         const { data, dataState } = state;
-        const filteredData: Task[] = filterBy(data, dataState.filter, subItemsField);
-        const sortedData: Task[] = orderBy(filteredData, dataState.sort, subItemsField);
+        const filteredData: Task[] = filterBy(data, dataState.filter || [], subItemsField);
+        const sortedData: Task[] = orderBy(filteredData, dataState.sort || [defaultSort], subItemsField);
         return addExpandField(sortedData);
     };
 
     return (
         <>
-            <Splitter
-                style={{ height: '100%' }}
-                panes={panes}
-                onChange={onChange}
-            >
+            <Splitter style={{ height: '100%' }} panes={panes} onChange={onChange}>
                 <TreeList
                     style={{ overflow: 'auto' }}
                     expandField={expandField}

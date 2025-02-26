@@ -26,13 +26,13 @@ let isDragging = false;
 let lastDraggingX = 0;
 
 const GanttCanvas: FC = () => {
-    const [canvasContainerRef, containerHeight, containerWidth] = useDivSize();
+    const [canvasContainerRef, ganttHeight, ganttWidth] = useDivSize();
 
     const [todayX, setTodayX] = useState<number>(0);
 
     // Timeline offsets
     const startX = -todayX;
-    const endX = startX + containerWidth;
+    const endX = startX + (ganttWidth || 0);
 
     const periodStart = getDate(startX),
         periodEnd = getDate(endX),
@@ -74,12 +74,7 @@ const GanttCanvas: FC = () => {
             days.push(
                 <Group key={currentDay.getTime()} x={getOffset(currentDay)} y={17}>
                     <Rect width={dayWidth} height={19} stroke={'#EDEDF2'} strokeWidth={1}></Rect>
-                    <Text
-                        text={formatAsDayNameFirstLetter(currentDay)}
-                        fontSize={11}
-                        x={dayWidth / 2}
-                        y={6}
-                    />
+                    <Text text={formatAsDayNameFirstLetter(currentDay)} fontSize={11} x={dayWidth / 2} y={6} />
                 </Group>
             );
         }
@@ -102,11 +97,12 @@ const GanttCanvas: FC = () => {
 
     return (
         <div ref={canvasContainerRef} style={{ height: '100%', overflow: 'hidden' }}>
-            <Stage onMouseDown={onMouseDown}
-                    onMouseUp={onMouseUp}
-                    onMouseMove={onMouseMove} 
-                    width={containerWidth}
-                     height={containerHeight}
+            <Stage
+                onMouseDown={onMouseDown}
+                onMouseUp={onMouseUp}
+                onMouseMove={onMouseMove}
+                width={ganttWidth}
+                height={ganttHeight}
             >
                 <Layer>
                     <Group x={todayX} y={0}>
