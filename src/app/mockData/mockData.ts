@@ -1,24 +1,26 @@
+import { Task } from '@/types';
 import { GanttDependency } from '@progress/kendo-react-gantt';
+import { addDays, today as getToday } from '@/utils/dateUtility';
 
-export const simpleTasks = [
+export const simpleTasks: Task[] = [
     {
         id: 1,
-        title: 'Task1',
+        name: 'Task1',
         start: new Date('2025-01-01T00:00:00.000Z'),
         end: new Date('2025-01-03T00:00:00.000Z'),
         completionRatio: 0.5,
         isExpanded: true,
-        subtasks: [
+        children: [
             {
                 id: 11,
-                title: 'Task1_sub1',
+                name: 'Task1_sub1',
                 start: new Date('2025-01-01T00:00:00.000Z'),
                 end: new Date('2025-01-02T00:00:00.000Z'),
                 completionRatio: 0.23,
             },
             {
                 id: 12,
-                title: 'Task1_sub2',
+                name: 'Task1_sub2',
                 start: new Date('2025-01-03T09:00:00.000Z'),
                 end: new Date('2025-01-03T18:00:00.000Z'),
                 completionRatio: 0.25,
@@ -27,22 +29,22 @@ export const simpleTasks = [
     },
     {
         id: 2,
-        title: 'Task2',
+        name: 'Task2',
         start: new Date('2025-01-06T00:00:00.000Z'),
         end: new Date('2025-01-10T00:00:00.000Z'),
         completionRatio: 0.5,
         isExpanded: true,
-        subtasks: [
+        children: [
             {
                 id: 21,
-                title: 'Task2_sub1',
+                name: 'Task2_sub1',
                 start: new Date('2025-01-06T00:00:00.000Z'),
                 end: new Date('2025-01-08T00:00:00.000Z'),
                 completionRatio: 0.1,
             },
             {
                 id: 22,
-                title: 'Task2_sub2',
+                name: 'Task2_sub2',
                 start: new Date('2025-01-09T00:00:00.000Z'),
                 end: new Date('2025-01-10T00:00:00.000Z'),
                 completionRatio: 0.25,
@@ -51,22 +53,22 @@ export const simpleTasks = [
     },
     {
         id: 3,
-        title: 'Task3',
+        name: 'Task3',
         start: new Date('2025-01-13T00:00:00.000Z'),
         end: new Date('2025-01-17T00:00:00.000Z'),
         completionRatio: 0.5,
         isExpanded: true,
-        subtasks: [
+        children: [
             {
                 id: 31,
-                title: 'Task3_sub1',
+                name: 'Task3_sub1',
                 start: new Date('2025-01-13T00:00:00.000Z'),
                 end: new Date('2025-01-15T00:00:00.000Z'),
                 completionRatio: 0.1,
             },
             {
                 id: 32,
-                title: 'Task3_sub2',
+                name: 'Task3_sub2',
                 start: new Date('2025-01-16T00:00:00.000Z'),
                 end: new Date('2025-01-17T00:00:00.000Z'),
                 completionRatio: 0.25,
@@ -75,22 +77,22 @@ export const simpleTasks = [
     },
     {
         id: 4,
-        title: 'Task4',
+        name: 'Task4',
         start: new Date('2025-01-20T00:00:00.000Z'),
         end: new Date('2025-01-24T00:00:00.000Z'),
         completionRatio: 0.5,
         isExpanded: true,
-        subtasks: [
+        children: [
             {
                 id: 41,
-                title: 'Task4_sub1',
+                name: 'Task4_sub1',
                 start: new Date('2025-01-20T00:00:00.000Z'),
                 end: new Date('2025-01-22T00:00:00.000Z'),
                 completionRatio: 0.1,
             },
             {
                 id: 42,
-                title: 'Task4_sub2',
+                name: 'Task4_sub2',
                 start: new Date('2025-01-23T00:00:00.000Z'),
                 end: new Date('2025-01-24T00:00:00.000Z'),
                 completionRatio: 0.25,
@@ -102,37 +104,37 @@ export const simpleTasks = [
 export const simpleTasksFromSample = [
     {
         id: 7,
-        title: 'Software validation, research and implementation',
+        name: 'Software validation, research and implementation',
         start: new Date('2014-06-02T00:00:00.000Z'),
         end: new Date('2014-06-19T00:00:00.000Z'),
         completionRatio: 0.45708333333333334,
         isExpanded: true,
-        subtasks: [
+        children: [
             {
                 id: 18,
-                title: 'Project Kickoff',
+                name: 'Project Kickoff',
                 start: new Date('2014-06-02T00:00:00.000Z'),
                 end: new Date('2014-06-02T00:00:00.000Z'),
                 completionRatio: 0.23,
             },
             {
                 id: 11,
-                title: 'Research',
+                name: 'Research',
                 start: new Date('2014-06-02T00:00:00.000Z'),
                 end: new Date('2014-06-07T00:00:00.000Z'),
                 completionRatio: 0.5766666666666667,
                 isExpanded: true,
-                subtasks: [
+                children: [
                     {
                         id: 19,
-                        title: 'Validation with Customers',
+                        name: 'Validation with Customers',
                         start: new Date('2014-06-02T00:00:00.000Z'),
                         end: new Date('2014-06-04T00:00:00.000Z'),
                         completionRatio: 0.25,
                     },
                     {
                         id: 39,
-                        title: 'Functional and Technical Specification',
+                        name: 'Functional and Technical Specification',
                         start: new Date('2014-06-04T00:00:00.000Z'),
                         end: new Date('2014-06-07T00:00:00.000Z'),
                         completionRatio: 0.66,
@@ -141,22 +143,22 @@ export const simpleTasksFromSample = [
             },
             {
                 id: 13,
-                title: 'Implementation',
+                name: 'Implementation',
                 start: new Date('2014-06-08T00:00:00.000Z'),
                 end: new Date('2014-06-19T00:00:00.000Z'),
                 completionRatio: 0.77,
                 isExpanded: true,
-                subtasks: [
+                children: [
                     {
                         id: 24,
-                        title: 'Prototype',
+                        name: 'Prototype',
                         start: new Date('2014-06-08T00:00:00.000Z'),
                         end: new Date('2014-06-14T00:00:00.000Z'),
                         completionRatio: 0.77,
                     },
                     {
                         id: 29,
-                        title: 'UI and Interaction',
+                        name: 'UI and Interaction',
                         start: new Date('2014-06-14T00:00:00.000Z'),
                         end: new Date('2014-06-19T00:00:00.000Z'),
                         completionRatio: 0.6,
@@ -165,7 +167,7 @@ export const simpleTasksFromSample = [
             },
             {
                 id: 17,
-                title: 'Release',
+                name: 'Release',
                 start: new Date('2014-06-19T00:00:00.000Z'),
                 end: new Date('2014-06-19T00:00:00.000Z'),
                 completionRatio: 0,
@@ -175,15 +177,19 @@ export const simpleTasksFromSample = [
 ];
 
 export const generateTasks = (tasksCount: number) => {
+    let currentDate = getToday();
+
     return [...Array(tasksCount).keys()].map((i) => {
-        return {
+        const res = {
             id: i,
-            title: `Test task ${i}`,
-            start: new Date('2014-06-02T00:00:00.000Z'),
-            end: new Date('2014-06-19T00:00:00.000Z'),
+            name: `Test task ${i}`,
+            start: currentDate,
+            end: addDays(currentDate, 7),
             completionRatio: 0.45708333333333334,
             isExpanded: true,
         };
+        currentDate = addDays(currentDate, 1);
+        return res;
     });
 };
 

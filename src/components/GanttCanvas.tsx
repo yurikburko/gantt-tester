@@ -129,7 +129,7 @@ const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
                                 key={task.id}
                                 task={task}
                                 // TODO. Add suport for tasks with no start or end date specified
-                                x={getOffset(task.startDate!)}
+                                x={getOffset(task.start!)}
                                 y={HEADER_HEIGHT + (startRow + index) * ROW_HEIGHT - offsetY}
                                 rowHeight={ROW_HEIGHT}
                                 zoomScale={zoomLevel}

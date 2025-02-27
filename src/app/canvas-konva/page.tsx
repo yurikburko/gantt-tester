@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React, { useCallback } from 'react';
 import { Splitter, SplitterOnChangeEvent, SplitterPaneProps } from '@progress/kendo-react-layout';
 import {
     extendDataItem,
@@ -17,6 +17,7 @@ import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
 import dynamic from 'next/dynamic';
 import { Task } from '@/types';
 import { treeToFlat } from '@progress/kendo-react-treelist';
+import { TaskGenerator } from '@/components/shared/TasksGenerator';
 
 const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
     ssr: false,
@@ -38,11 +39,12 @@ interface AppState {
 const subItemsField: string = 'children';
 const expandField: string = 'expanded';
 const columns: TreeListColumnProps[] = [
+    { field: 'id', title: 'Id', width: 40 },
     { field: 'name', title: 'Name', width: '250px', filter: TreeListTextFilter, expandable: true },
-    { field: 'startDate', title: 'Start Date', width: '200px', format: '{0:d}' },
-    { field: 'endDate', title: 'End Date', width: '200px', format: '{0:d}' },
+    { field: 'start', title: 'Start Date', width: '200px', format: '{0:d}' },
+    { field: 'end', title: 'End Date', width: '200px', format: '{0:d}' },
 ];
-const defaultSort: SortDescriptor = { field: 'name', dir: 'asc' };
+const defaultSort: SortDescriptor = { field: 'id', dir: 'asc' };
 
 const tasks2 = [...Array(1000).keys()].map((i) => {
     return {
@@ -68,13 +70,11 @@ export default function Page() {
         {
             id: 1,
             name: 'task1',
-            startDate: new Date(2025, 0, 1),
-            endDate: new Date(2025, 0, 5),
-            children: [
-                { id: 11, name: 'task1_subtask', startDate: new Date(2025, 0, 10), endDate: new Date(2025, 0, 13) },
-            ],
+            start: new Date(2025, 0, 1),
+            end: new Date(2025, 0, 5),
+            children: [{ id: 11, name: 'task1_subtask', start: new Date(2025, 0, 10), end: new Date(2025, 0, 13) }],
         },
-        { id: 2, name: 'task2', startDate: new Date(2025, 0, 10), endDate: new Date(2025, 0, 15) },
+        { id: 2, name: 'task2', start: new Date(2025, 0, 10), end: new Date(2025, 0, 15) },
     ];
 
     const [state, setState] = React.useState<AppState>({
@@ -117,25 +117,39 @@ export default function Page() {
         return addExpandField(sortedData);
     };
 
+    const onGenerateTasksClick = useCallback(
+        (testTasks: Task[]): void => {
+            setState({
+                ...state,
+                data: testTasks,
+            });
+        },
+        [state]
+    );
+
     const processedData = processData();
     const flatTasks = treeToFlat(processedData, expandField, subItemsField);
 
     return (
         <>
-            <Splitter style={{ height: '100%' }} panes={panes} onChange={onChange}>
-                <TreeList
-                    style={{ overflow: 'auto' }}
-                    expandField={expandField}
-                    subItemsField={subItemsField}
-                    onExpandChange={onExpandChange}
-                    sortable={{ mode: 'multiple' }}
-                    {...state.dataState}
-                    data={processedData}
-                    onDataStateChange={handleDataStateChange}
-                    columns={columns}
-                />
-                <GanttCanvas tasks={flatTasks} />
-            </Splitter>
+            <div id="root" className="flex flex-col">
+                <h1>Kendo Gantt implementation</h1>
+                <TaskGenerator onTasksGenerate={onGenerateTasksClick}></TaskGenerator>
+                <Splitter style={{ height: '100%', overflow: 'hidden' }} panes={panes} onChange={onChange}>
+                    <TreeList
+                        style={{ overflow: 'auto' }}
+                        expandField={expandField}
+                        subItemsField={subItemsField}
+                        onExpandChange={onExpandChange}
+                        sortable={{ mode: 'multiple' }}
+                        {...state.dataState}
+                        data={processedData}
+                        onDataStateChange={handleDataStateChange}
+                        columns={columns}
+                    />
+                    <GanttCanvas tasks={flatTasks} />
+                </Splitter>
+            </div>
         </>
     );
 }

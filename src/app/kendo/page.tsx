@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
     Gantt,
     GanttWeekView,
@@ -35,17 +35,17 @@ import {
     GanttSortChangeEvent,
     GanttSelectionChangeEvent,
     getSelectedState,
-    GanttKeyDownEvent, 
-    getSelectedStateFromKeyDown
+    GanttKeyDownEvent,
+    getSelectedStateFromKeyDown,
 } from '@progress/kendo-react-gantt';
-import { generateTasks, simpleDependencies, simpleTasks } from '../mockData/mockData';
+import { simpleDependencies, simpleTasks } from '../mockData/mockData';
 import { useLicenseRemover } from './hooks/useLicenseRemover';
 import { clone, getter, guid } from '@progress/kendo-react-common';
 import { CompositeFilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
 import { WindowProps, WindowPropsContext } from '@progress/kendo-react-dialogs';
 import { ColumnMenuDateColumn, ColumnMenuTextColumn } from '@progress/kendo-react-data-tools';
-import { NumericTextBox } from '@progress/kendo-react-inputs';
-import { Button } from '@progress/kendo-react-buttons';
+import { TaskGenerator } from '@/components/shared/TasksGenerator';
+import { Task } from '@/types';
 
 const ganttStyle = {
     height: '100%',
@@ -57,7 +57,7 @@ const taskModelFields: TaskModelFields = {
     id: 'id',
     start: 'start',
     end: 'end',
-    title: 'title',
+    title: 'name',
     percentComplete: 'percentComplete',
     parentId: 'parentId',
     isRollup: 'isRollup',
@@ -127,7 +127,7 @@ export default function Page() {
     );
 
     // Why the type of value includes number[] ?
-    const [selectedState, setSelectedState] = React.useState<{ [key: string]:  boolean | number[] }>({});
+    const [selectedState, setSelectedState] = React.useState<{ [key: string]: boolean | number[] }>({});
 
     const [editItem, setEditItem] = React.useState(null);
     const [removeItem, setRemoveItem] = React.useState(null);
@@ -186,7 +186,7 @@ export default function Page() {
             const newSelectedState = getSelectedState({
                 event,
                 selectedState,
-                dataItemKey: taskModelFields.id
+                dataItemKey: taskModelFields.id,
             });
 
             setSelectedState(newSelectedState);
@@ -198,14 +198,14 @@ export default function Page() {
             const newSelectedState = getSelectedStateFromKeyDown({
                 event,
                 selectedState: selectedState,
-                dataItemKey: taskModelFields.id
+                dataItemKey: taskModelFields.id,
             });
 
             setSelectedState(newSelectedState);
         },
         [selectedState]
     );
-    
+
     const onEdit = React.useCallback(
         (event: GanttTaskDoubleClickEvent | GanttRowDoubleClickEvent) => setEditItem(clone(event.dataItem)),
         [setEditItem]
@@ -355,29 +355,16 @@ export default function Page() {
         );
     }, [taskData, expandedState, dataState, selectedState]);
 
-    const [testTasksCount, setTestTasksCount] = React.useState(100);
-    const onGenerateTasksClick = () => {
-        const testTasks = generateTasks(testTasksCount);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setTaskData(testTasks as any[]);
+    const onGenerateTasksClick = useCallback((testTasks: Task[]): void => {
+        setTaskData(testTasks);
         setDependencyData([]);
-    };
+    }, []);
 
     return (
         <div id="root" className="flex flex-col">
             <h1>Kendo Gantt implementation</h1>
 
-            <div className="flex" style={{ alignItems: 'center', gap: '8px' }}>
-                <span>Tasks count</span>
-                <NumericTextBox
-                    placeholder="Please enter tasks count"
-                    defaultValue={100}
-                    width={100}
-                    value={testTasksCount}
-                    onChange={(e) => setTestTasksCount(e.target.value ?? 0)}
-                />
-                <Button onClick={onGenerateTasksClick}>Generate tasks</Button>
-            </div>
+            <TaskGenerator onTasksGenerate={onGenerateTasksClick}></TaskGenerator>
 
             <Gantt
                 style={ganttStyle}
@@ -412,13 +399,13 @@ export default function Page() {
                     enabled: true,
                     drag: false,
                     cell: false,
-                    mode: "multiple"
+                    mode: 'multiple',
                 }}
                 onSelectionChange={onSelectionChange}
                 onKeyDown={onKeyDown}
             >
-                <GanttDayView slotDuration={180}/>
-                <GanttWeekView slotWidth={90}/>
+                <GanttDayView slotDuration={180} />
+                <GanttWeekView slotWidth={90} />
                 <GanttMonthView />
                 <GanttYearView />
             </Gantt>

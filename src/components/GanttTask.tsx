@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { GanttTask as IGanttTask } from '../types';
+import { daysDiff } from '@/utils/dateUtility';
 
 type GanttTaskProps = {
     task: IGanttTask;
@@ -11,8 +12,8 @@ type GanttTaskProps = {
 };
 
 export const GanttTask: FC<GanttTaskProps> = ({ task, x, y, rowHeight, zoomScale }) => {
-    // TODO. Fix calculation
-    const width = (task.endDate!.getDate() - task.startDate!.getDate()) * zoomScale;
+    const duration = daysDiff(task.start!, task.end!) + 1;
+    const width = Math.floor(duration * zoomScale + 1);
 
     return (
         <Group x={x} y={y}>
@@ -30,8 +31,8 @@ export const GanttTask: FC<GanttTaskProps> = ({ task, x, y, rowHeight, zoomScale
                     // TODO. Verify and fix code
                     const newX = e.target.x() + scrollX;
                     const day = Math.round(newX / zoomScale);
-                    task.startDate!.setDate(day + 1);
-                    task.endDate!.setDate(day + 5);
+                    task.start!.setDate(day + 1);
+                    task.end!.setDate(day + 5);
                 }}
             />
             <Text x={x + 8} y={y + 8} text={task.name} fontSize={14} fill="white" />
