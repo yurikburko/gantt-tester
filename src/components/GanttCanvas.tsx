@@ -1,4 +1,5 @@
 import { useDivSize } from '@/common/hooks/useBoxSize';
+import { GanttTask as IGanttTask } from '@/types';
 import {
     addDays,
     daysDiff,
@@ -10,9 +11,12 @@ import {
 import Konva from 'konva';
 import React, { FC, useState } from 'react';
 import { Stage, Layer, Rect, Text, Group } from 'react-konva';
+import { GanttTask } from './GanttTask';
 
 const today = getToday();
 const zoomLevel = 20;
+const ROW_HEIGHT = 36;
+const HEADER_HEIGHT = 83.59;
 
 const getDate = (offset: number) => {
     // works for both positive and negative diffs thanks to the Math.floor
@@ -25,10 +29,15 @@ const getOffset = (date: Date): number => {
 let isDragging = false;
 let lastDraggingX = 0;
 
-const GanttCanvas: FC = () => {
+type GanttCanvasProps = {
+    tasks: IGanttTask[];
+};
+
+const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
     const [canvasContainerRef, ganttHeight, ganttWidth] = useDivSize();
 
     const [todayX, setTodayX] = useState<number>(0);
+    const [offsetY, setOffsetY] = useState<number>(0);
 
     // Timeline offsets
     const startX = -todayX;
@@ -95,6 +104,13 @@ const GanttCanvas: FC = () => {
         isDragging = false;
     };
 
+    // Virtualization calculations
+    const visibleRows = Math.ceil((ganttHeight || 0) / ROW_HEIGHT);
+    const startRow = Math.max(0, Math.floor(offsetY / ROW_HEIGHT) - 5);
+    const endRow = Math.min(tasks.length, startRow + visibleRows + 10);
+    const totalHeight = tasks.length * ROW_HEIGHT + HEADER_HEIGHT;
+    const visibleTasks = tasks.slice(startRow, endRow);
+
     return (
         <div ref={canvasContainerRef} style={{ height: '100%', overflow: 'hidden' }}>
             <Stage
@@ -108,6 +124,17 @@ const GanttCanvas: FC = () => {
                     <Group x={todayX} y={0}>
                         {weeks}
                         {days}
+                        {visibleTasks.map((task, index) => (
+                            <GanttTask
+                                key={task.id}
+                                task={task}
+                                // TODO. Add suport for tasks with no start or end date specified
+                                x={getOffset(task.startDate!)}
+                                y={HEADER_HEIGHT + (startRow + index) * ROW_HEIGHT - offsetY}
+                                rowHeight={ROW_HEIGHT}
+                                zoomScale={zoomLevel}
+                            />
+                        ))}
                     </Group>
                 </Layer>
             </Stage>

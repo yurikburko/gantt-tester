@@ -15,18 +15,15 @@ import {
 } from '@progress/kendo-react-treelist';
 import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
 import dynamic from 'next/dynamic';
+import { Task } from '@/types';
+import { treeToFlat } from '@progress/kendo-react-treelist';
 
 const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
     ssr: false,
 });
-
-interface Task {
-    id: number;
-    name: string;
-    startDate?: Date;
-    endDate?: Date;
-    children?: Task[];
-}
+const GanttCanvasTest = dynamic(() => import('../../components/GanttCanvasTest'), {
+    ssr: false,
+});
 
 export interface DataState {
     sort?: SortDescriptor[];
@@ -46,6 +43,15 @@ const columns: TreeListColumnProps[] = [
     { field: 'endDate', title: 'End Date', width: '200px', format: '{0:d}' },
 ];
 const defaultSort: SortDescriptor = { field: 'name', dir: 'asc' };
+
+const tasks2 = [...Array(1000).keys()].map((i) => {
+    return {
+        id: i,
+        name: `Test task ${i}`,
+        start: new Date('2014-06-02T00:00:00.000Z'),
+        end: new Date('2014-06-19T00:00:00.000Z'),
+    };
+});
 
 export default function Page() {
     // const posts = await getPosts()
@@ -111,6 +117,9 @@ export default function Page() {
         return addExpandField(sortedData);
     };
 
+    const processedData = processData();
+    const flatTasks = treeToFlat(processedData, expandField, subItemsField);
+
     return (
         <>
             <Splitter style={{ height: '100%' }} panes={panes} onChange={onChange}>
@@ -121,11 +130,11 @@ export default function Page() {
                     onExpandChange={onExpandChange}
                     sortable={{ mode: 'multiple' }}
                     {...state.dataState}
-                    data={processData()}
+                    data={processedData}
                     onDataStateChange={handleDataStateChange}
                     columns={columns}
                 />
-                <GanttCanvas></GanttCanvas>
+                <GanttCanvas tasks={flatTasks} />
             </Splitter>
         </>
     );
