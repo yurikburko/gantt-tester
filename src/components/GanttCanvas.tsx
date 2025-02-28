@@ -9,7 +9,7 @@ import {
     today as getToday,
 } from '@/utils/dateUtility';
 import Konva from 'konva';
-import React, { FC, useRef, useState } from 'react';
+import React, { FC, useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Rect, Text, Group } from 'react-konva';
 import { GanttTask } from './GanttTask';
 import { ROW_HEIGHT } from './consts';
@@ -38,8 +38,26 @@ const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const [todayX, setTodayX] = useState<number>(0);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [offsetY, setOffsetY] = useState<number>(0);
+
+    useEffect(() => {
+        const scrollContainer = scrollContainerRef.current;
+        if (!scrollContainer) {
+            return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const onScroll = (e: Event) => {
+            setTodayX(-scrollContainer.scrollLeft)
+            setOffsetY(scrollContainer.scrollTop);
+        };
+
+        scrollContainer.addEventListener('scroll', onScroll);
+
+        return () => {
+            scrollContainer.addEventListener('scroll', onScroll);
+        };
+    }, []);
 
     // Timeline offsets
     const startX = -todayX;
@@ -64,7 +82,7 @@ const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
                     height={19}
                     fill={'#F7F7FC'}
                     stroke={'#EDEDF2'}
-                    // strokeWidth={1} // border width
+                // strokeWidth={1} // border width
                 ></Rect>
                 <Text
                     fontFamily="Arial"
