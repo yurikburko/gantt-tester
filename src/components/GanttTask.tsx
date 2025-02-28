@@ -35,7 +35,7 @@ export const GanttTask: FC<GanttTaskProps> = ({ task, x, y, rowHeight, zoomScale
                     task.end!.setDate(day + 5);
                 }}
             />
-            <Text x={x + 8} y={y + 8} text={task.name} fontSize={14} fill="white" />
+            <Text x={8} y={8} text={task.name} fontSize={14} fill="white" />
         </Group>
     );
 };

@@ -9,7 +9,7 @@ import {
     today as getToday,
 } from '@/utils/dateUtility';
 import Konva from 'konva';
-import React, { FC, useState } from 'react';
+import React, { FC, useRef, useState } from 'react';
 import { Stage, Layer, Rect, Text, Group } from 'react-konva';
 import { GanttTask } from './GanttTask';
 import { ROW_HEIGHT } from './consts';
@@ -35,8 +35,10 @@ type GanttCanvasProps = {
 
 const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
     const [canvasContainerRef, ganttHeight, ganttWidth] = useDivSize();
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const [todayX, setTodayX] = useState<number>(0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [offsetY, setOffsetY] = useState<number>(0);
 
     // Timeline offsets
@@ -93,6 +95,7 @@ const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
         isDragging = true;
         lastDraggingX = e.evt.clientX;
     };
+
     const onMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
         if (isDragging) {
             const deltaScrollX = e.evt.clientX - lastDraggingX;
@@ -138,6 +141,24 @@ const GanttCanvas: FC<GanttCanvasProps> = ({ tasks }) => {
                     </Group>
                 </Layer>
             </Stage>
+
+            {/* Scroll size placeholder */}
+            <div
+                ref={scrollContainerRef}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    overflow: 'auto',
+                    // TODO. Investigate this css style!
+                    // willChange: 'transform',
+                }}
+            >
+                {/* TODO. Set correct width value */}
+                <div style={{ width: 365 * zoomLevel, height: totalHeight }} />
+            </div>
         </div>
     );
 };

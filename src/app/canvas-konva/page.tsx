@@ -24,9 +24,9 @@ import { useDivSize } from '@/common/hooks/useBoxSize';
 const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
     ssr: false,
 });
-const GanttCanvasTest = dynamic(() => import('../../components/GanttCanvasTest'), {
-    ssr: false,
-});
+// const GanttCanvasTest = dynamic(() => import('../../components/GanttCanvasTest'), {
+//     ssr: false,
+// });
 
 export interface DataState {
     sort?: SortDescriptor[];
@@ -48,17 +48,34 @@ const columns: TreeListColumnProps[] = [
 ];
 const defaultSort: SortDescriptor = { field: 'id', dir: 'asc' };
 
-const tasks2 = [...Array(1000).keys()].map((i) => {
-    return {
-        id: i,
-        name: `Test task ${i}`,
-        start: new Date('2014-06-02T00:00:00.000Z'),
-        end: new Date('2014-06-19T00:00:00.000Z'),
-    };
-});
+// const tasks2 = [...Array(1000).keys()].map((i) => {
+//     return {
+//         id: i,
+//         name: `Test task ${i}`,
+//         start: new Date('2014-06-02T00:00:00.000Z'),
+//         end: new Date('2014-06-19T00:00:00.000Z'),
+//     };
+// });
 
 export default function Page() {
     // const posts = await getPosts()
+
+    // TODO. Finish
+    // const [offsetY, setOffsetY] = useState<number>(0);
+    // useEffect(() => {
+    //     const onTreeListScroll = (e: Event) => {
+    //         setOffsetY((e.currentTarget as HTMLDivElement).scrollTop);
+    //     };
+
+    //     const kendoTreeList = document.getElementsByClassName('k-treelist-scrollable')[0] as HTMLDivElement;
+    //     if (kendoTreeList) {
+    //         kendoTreeList.addEventListener('scroll', onTreeListScroll);
+    //     }
+
+    //     return () => {
+    //         kendoTreeList.removeEventListener('scroll', onTreeListScroll);
+    //     };
+    // }, []);
 
     const [panes, setPanes] = React.useState<Array<SplitterPaneProps>>([
         { size: '20%', min: '20px', collapsible: true },
@@ -157,6 +174,7 @@ export default function Page() {
                         />
                     </div>
                     <GanttCanvas tasks={flatTasks} />
+                    {/* <GanttCanvasTest /> */}
                 </Splitter>
             </div>
         </>
