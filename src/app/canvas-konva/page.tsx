@@ -18,6 +18,8 @@ import dynamic from 'next/dynamic';
 import { Task } from '@/types';
 import { treeToFlat } from '@progress/kendo-react-treelist';
 import { TaskGenerator } from '@/components/shared/TasksGenerator';
+import { ROW_HEIGHT } from '@/components/consts';
+import { useDivSize } from '@/common/hooks/useBoxSize';
 
 const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
     ssr: false,
@@ -127,6 +129,8 @@ export default function Page() {
         [state]
     );
 
+    const [treeContainerRef, treeBoxHeight] = useDivSize();
+
     const processedData = processData();
     const flatTasks = treeToFlat(processedData, expandField, subItemsField);
 
@@ -136,17 +140,22 @@ export default function Page() {
                 <h1>Kendo Gantt implementation</h1>
                 <TaskGenerator onTasksGenerate={onGenerateTasksClick}></TaskGenerator>
                 <Splitter style={{ height: '100%', overflow: 'hidden' }} panes={panes} onChange={onChange}>
-                    <TreeList
-                        style={{ overflow: 'auto' }}
-                        expandField={expandField}
-                        subItemsField={subItemsField}
-                        onExpandChange={onExpandChange}
-                        sortable={{ mode: 'multiple' }}
-                        {...state.dataState}
-                        data={processedData}
-                        onDataStateChange={handleDataStateChange}
-                        columns={columns}
-                    />
+                    <div ref={treeContainerRef} style={{ height: '100%' }}>
+                        <TreeList
+                            style={{ overflow: 'auto', height: treeBoxHeight }}
+                            expandField={expandField}
+                            subItemsField={subItemsField}
+                            onExpandChange={onExpandChange}
+                            sortable={{ mode: 'multiple' }}
+                            {...state.dataState}
+                            data={processedData}
+                            onDataStateChange={handleDataStateChange}
+                            columns={columns}
+                            navigatable={true}
+                            scrollable="virtual"
+                            rowHeight={ROW_HEIGHT}
+                        />
+                    </div>
                     <GanttCanvas tasks={flatTasks} />
                 </Splitter>
             </div>

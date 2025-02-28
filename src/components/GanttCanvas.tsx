@@ -12,10 +12,10 @@ import Konva from 'konva';
 import React, { FC, useState } from 'react';
 import { Stage, Layer, Rect, Text, Group } from 'react-konva';
 import { GanttTask } from './GanttTask';
+import { ROW_HEIGHT } from './consts';
 
 const today = getToday();
 const zoomLevel = 20;
-const ROW_HEIGHT = 36;
 const HEADER_HEIGHT = 83.59;
 
 const getDate = (offset: number) => {
