@@ -5,12 +5,16 @@ import { Splitter, SplitterOnChangeEvent, SplitterPaneProps } from '@progress/ke
 import {
     extendDataItem,
     filterBy,
+    getSelectedState,
+    getSelectedStateFromKeyDown,
     mapTree,
     orderBy,
     TreeList,
     TreeListColumnProps,
     TreeListDataStateChangeEvent,
     TreeListExpandChangeEvent,
+    TreeListKeyDownEvent,
+    TreeListSelectionChangeEvent,
     TreeListTextFilter,
 } from '@progress/kendo-react-treelist';
 import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
@@ -32,14 +36,18 @@ export interface DataState {
     sort?: SortDescriptor[];
     filter?: FilterDescriptor[];
 }
+
 interface AppState {
     data: Task[];
     dataState: DataState;
     expanded: number[];
+    selected: { [id: string]: number[] | boolean };
 }
 
+const dataItemKey: string = 'id';
 const subItemsField: string = 'children';
 const expandField: string = 'expanded';
+const selectedField: string = 'selected';
 const columns: TreeListColumnProps[] = [
     { field: 'id', title: 'Id', width: 40 },
     { field: 'name', title: 'Name', width: '250px', filter: TreeListTextFilter, expandable: true },
@@ -103,6 +111,7 @@ export default function Page() {
             filter: [],
         },
         expanded: [1, 2, 32],
+        selected: {},
     });
 
     const onExpandChange = (e: TreeListExpandChangeEvent) => {
@@ -113,6 +122,34 @@ export default function Page() {
                 : [...state.expanded, e.dataItem.id],
         });
     };
+
+    const onSelectionChange = React.useCallback(
+        (event: TreeListSelectionChangeEvent) => {
+            const newSelectedState = getSelectedState({
+                event,
+                selectedState: state.selected,
+                dataItemKey: dataItemKey,
+            });
+            setState({
+                ...state,
+                selected: newSelectedState,
+            });
+        },
+        [state]
+    );
+
+    const onKeyDown = (event: TreeListKeyDownEvent) => {
+        const newSelectedState = getSelectedStateFromKeyDown({
+            event,
+            selectedState: state.selected,
+            dataItemKey: dataItemKey,
+        });
+        setState({
+            ...state,
+            selected: newSelectedState,
+        });
+    };
+
     const handleDataStateChange = (event: TreeListDataStateChangeEvent) => {
         setState({
             ...state,
@@ -120,11 +157,13 @@ export default function Page() {
         });
     };
 
-    const addExpandField = (dataTree: Task[]) => {
+    const extendData = (dataTree: Task[]) => {
         const expanded: number[] = state.expanded;
+        const selected: { [id: string]: number[] | boolean } = state.selected;
         return mapTree(dataTree, subItemsField, (item) =>
             extendDataItem(item, subItemsField, {
                 [expandField]: expanded.includes(item.id),
+                [selectedField]: selected[item.id],
             })
         );
     };
@@ -133,7 +172,7 @@ export default function Page() {
         const { data, dataState } = state;
         const filteredData: Task[] = filterBy(data, dataState.filter || [], subItemsField);
         const sortedData: Task[] = orderBy(filteredData, dataState.sort || [defaultSort], subItemsField);
-        return addExpandField(sortedData);
+        return extendData(sortedData);
     };
 
     const onGenerateTasksClick = useCallback(
@@ -162,6 +201,7 @@ export default function Page() {
                             style={{ overflow: 'auto', height: treeBoxHeight }}
                             expandField={expandField}
                             subItemsField={subItemsField}
+                            selectedField={selectedField}
                             onExpandChange={onExpandChange}
                             sortable={{ mode: 'multiple' }}
                             {...state.dataState}
@@ -171,6 +211,15 @@ export default function Page() {
                             navigatable={true}
                             scrollable="virtual"
                             rowHeight={ROW_HEIGHT}
+                            // TODO. Fix expand item by pressing Enter.
+                            selectable={{
+                                enabled: true,
+                                drag: false,
+                                cell: false,
+                                mode: 'single',
+                            }}
+                            onSelectionChange={onSelectionChange}
+                            onKeyDown={onKeyDown}
                         />
                     </div>
                     <GanttCanvas tasks={flatTasks} />
