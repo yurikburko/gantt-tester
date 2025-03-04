@@ -1,10 +1,10 @@
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-const ellipses = "\u2026"; // code \u2026 it's ellipses
-const separator = " - ";
+const ellipses = '\u2026'; // code \u2026 it's ellipses
+const separator = ' - ';
 
 const currentCultureSettings = {
     firstDay: 0,
-} 
+};
 
 const getCurrentDate = (): Date => {
     return new Date();
@@ -38,22 +38,22 @@ const isCurrentYear = (date: Date): boolean => {
     return current_year === source_year;
 };
 
-export const addDays = (date: Date, days: number): Date =>  {
+export const addDays = (date: Date, days: number): Date => {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
-}
+};
 
 export const daysDiff = (first: Date, second: Date) => {
     const firstDate = Date.UTC(first.getFullYear(), first.getMonth(), first.getDate());
     const secondDate = Date.UTC(second.getFullYear(), second.getMonth(), second.getDate());
 
     return Math.ceil((secondDate - firstDate) / MS_PER_DAY);
-}
+};
 
 export const getDayOfWeek = (date: Date): number => {
     return (7 + date.getDay() - currentCultureSettings.firstDay) % 7;
-}
+};
 
 const compareYears = (firstDate: Date, secondDate: Date): boolean => {
     if (!firstDate && !secondDate) {
@@ -65,35 +65,35 @@ const compareYears = (firstDate: Date, secondDate: Date): boolean => {
     }
 
     return firstDate.getFullYear() === secondDate.getFullYear();
-}
+};
 
-const formatAsShort = (date: Date, nullText?: string): string => {
+export const formatAsShort = (date: Date, nullText?: string): string => {
     if (date) {
         return date.toLocaleDateString(undefined, {
             month: 'short',
             day: '2-digit',
         });
     }
-    return nullText || "";
-}
+    return nullText || '';
+};
 
 const formatAsMediumFullYear = (date: Date): string => {
     return date.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
         day: '2-digit',
-    })
-}
+    });
+};
 
 const formatAsMediumOrShort = (date: Date, alwaysShowYear: boolean = false): string => {
     if (!date) {
-        return "";
+        return '';
     }
 
     return isCurrentYear(date) && !alwaysShowYear ? formatAsShort(date) : formatAsMediumFullYear(date);
-}
+};
 
-export const formatDatesRange = (start: Date, end: Date, options: {alwaysShowYear?: boolean } = {}): string => {
+export const formatDatesRange = (start: Date, end: Date, options: { alwaysShowYear?: boolean } = {}): string => {
     const { alwaysShowYear } = { alwaysShowYear: false, ...options };
 
     if (start && end) {
@@ -114,21 +114,21 @@ export const formatDatesRange = (start: Date, end: Date, options: {alwaysShowYea
     }
 
     return ellipses + separator + formatAsMediumOrShort(end, alwaysShowYear);
-}
+};
 
 const formatAsDayNameMin = (date: Date): string => {
     if (date) {
-        return (date).toLocaleDateString(undefined, {
+        return date.toLocaleDateString(undefined, {
             weekday: 'short',
-        })
+        });
     }
-    
-    return "";
-}
+
+    return '';
+};
 
 export const formatAsDayNameFirstLetter = (date: Date): string => {
     if (date) {
         return formatAsDayNameMin(date).charAt(0);
     }
-    return "";
-}
+    return '';
+};
