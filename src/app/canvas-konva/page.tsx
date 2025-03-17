@@ -12,9 +12,12 @@ import {
     TreeList,
     TreeListColumnProps,
     TreeListDataStateChangeEvent,
+    TreeListDateEditor,
     TreeListExpandChangeEvent,
+    TreeListItemChangeEvent,
     TreeListKeyDownEvent,
     TreeListSelectionChangeEvent,
+    TreeListTextEditor,
     TreeListTextFilter,
 } from '@progress/kendo-react-treelist';
 import { FilterDescriptor, SortDescriptor } from '@progress/kendo-data-query';
@@ -24,6 +27,7 @@ import { treeToFlat } from '@progress/kendo-react-treelist';
 import { TaskGenerator } from '@/components/shared/TasksGenerator';
 import { ROW_HEIGHT } from '@/components/consts';
 import { useDivSize } from '@/common/hooks/useBoxSize';
+import { DataItemType, Renderers } from '@/components/shared/treeList/editing/Renderers';
 
 const GanttCanvas = dynamic(() => import('../../components/GanttCanvas'), {
     ssr: false,
@@ -42,17 +46,29 @@ interface AppState {
     dataState: DataState;
     expanded: number[];
     selected: { [id: string]: number[] | boolean };
+    editItem: Task | undefined;
+    editItemField: string | undefined;
+    changes: boolean;
 }
 
 const dataItemKey: string = 'id';
 const subItemsField: string = 'children';
 const expandField: string = 'expanded';
 const selectedField: string = 'selected';
+const editField: string = 'inEdit';
+
 const columns: TreeListColumnProps[] = [
     { field: 'id', title: 'Id', width: 40 },
-    { field: 'name', title: 'Name', width: '250px', filter: TreeListTextFilter, expandable: true },
-    { field: 'start', title: 'Start Date', width: '200px', format: '{0:d}' },
-    { field: 'end', title: 'End Date', width: '200px', format: '{0:d}' },
+    {
+        field: 'name',
+        title: 'Name',
+        width: '250px',
+        filter: TreeListTextFilter,
+        expandable: true,
+        editCell: TreeListTextEditor,
+    },
+    { field: 'start', title: 'Start Date', width: '200px', format: '{0:d}', editCell: TreeListDateEditor },
+    { field: 'end', title: 'End Date', width: '200px', format: '{0:d}', editCell: TreeListDateEditor },
 ];
 const defaultSort: SortDescriptor = { field: 'id', dir: 'asc' };
 
@@ -112,7 +128,41 @@ export default function Page() {
         },
         expanded: [1, 2, 32],
         selected: {},
+        editItem: undefined,
+        editItemField: undefined,
+        changes: false,
     });
+
+    // In-cell editing
+    const enterEdit = (dataItem: DataItemType, field: string) => {
+        setState({
+            ...state,
+            editItem: { ...(dataItem as unknown as Task) },
+            editItemField: field,
+        });
+    };
+    const exitEdit = () => {
+        setState({
+            ...state,
+            editItem: undefined,
+            editItemField: undefined,
+        });
+    };
+    const renderers = new Renderers(enterEdit, exitEdit, editField);
+
+    const itemChange = (event: TreeListItemChangeEvent) => {
+        const field = event.field;
+        setState({
+            ...state,
+            changes: true,
+            data: mapTree(state.data, subItemsField, (item) =>
+                event.dataItem.id === item.id ? extendDataItem(item, subItemsField, { [field!]: event.value }) : item
+            ),
+        });
+    };
+
+    const { editItem, editItemField } = state;
+    const editItemId = editItem ? editItem.id : null;
 
     const onExpandChange = (e: TreeListExpandChangeEvent) => {
         setState({
@@ -164,6 +214,7 @@ export default function Page() {
             extendDataItem(item, subItemsField, {
                 [expandField]: expanded.includes(item.id),
                 [selectedField]: selected[item.id],
+                [editField]: item.id === editItemId ? editItemField : undefined,
             })
         );
     };
@@ -207,7 +258,10 @@ export default function Page() {
                             {...state.dataState}
                             data={processedData}
                             onDataStateChange={handleDataStateChange}
-                            columns={columns}
+                            columns={columns.map((column) => ({
+                                ...column,
+                                editCell: editItemField === column.field ? column.editCell : undefined,
+                            }))}
                             navigatable={true}
                             scrollable="virtual"
                             rowHeight={ROW_HEIGHT}
@@ -220,6 +274,11 @@ export default function Page() {
                             }}
                             onSelectionChange={onSelectionChange}
                             onKeyDown={onKeyDown}
+                            // Editing
+                            editField={editField}
+                            cellRender={renderers.cellRender}
+                            rowRender={renderers.rowRender}
+                            onItemChange={itemChange}
                         />
                     </div>
                     <GanttCanvas tasks={flatTasks} />
